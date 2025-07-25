@@ -1,3 +1,5 @@
+"use client";
+
 import { useClerk } from "@clerk/nextjs";
 import { useCallback, useState } from "react";
 import { User } from "stream-chat";
@@ -18,7 +20,7 @@ export default function Home() {
       const userId = clerkUser?.id;
       const mail = clerkUser?.primaryEmailAddress?.emailAddress;
       if (userId && mail) {
-        const response = await fetch("api/register-user", {
+        const response = await fetch("/api/register-user", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -32,9 +34,35 @@ export default function Home() {
     [clerkUser]
   );
 
+  async function getUserToken(userId: string, userName: string) {
+    const response = await fetch("/api/token", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId: userId }),
+    });
+
+    const responseBody = await response.json();
+    const token = responseBody.token;
+
+    if (!token) {
+      console.error("No token found");
+    }
+
+    const user: User = {
+      id: userId,
+      name: userName,
+      image: `https://getstream.io/random_png/?id=${userId}&name=${userName}`,
+    };
+
+    const apiKey = process.env.STREAM_API_KEY;
+    if (apiKey) {
+      setHomeState({ apiKey: apiKey, user: user, token: token });
+    }
+  }
+
   if (!homeState) {
     return <LoadingIndicator />;
   }
 
-  return <div>Welcome to Discord</div>;
+  return <div color="white">Welcome to Discord</div>;
 }
