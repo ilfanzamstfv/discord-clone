@@ -1,7 +1,8 @@
 "use client";
 
+import MyChat from "@/components/mychat";
 import { useClerk } from "@clerk/nextjs";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { User } from "stream-chat";
 import { LoadingIndicator } from "stream-chat-react";
 
@@ -54,15 +55,38 @@ export default function Home() {
       image: `https://getstream.io/random_png/?id=${userId}&name=${userName}`,
     };
 
-    const apiKey = process.env.STREAM_API_KEY;
+    const apiKey = process.env.NEXT_PUBLIC_STREAM_API_KEY;
     if (apiKey) {
       setHomeState({ apiKey: apiKey, user: user, token: token });
     }
   }
 
+  useEffect(() => {
+    if (
+      clerkUser?.id &&
+      clerkUser?.primaryEmailAddress?.emailAddress &&
+      clerkUser?.publicMetadata.streamRegistered
+    ) {
+      registerUser().then((result) => {
+        getUserToken(
+          clerkUser.id,
+          clerkUser?.primaryEmailAddress?.emailAddress || "Unknown"
+        );
+      });
+    } else {
+      // take user and get token
+      if (clerkUser?.id) {
+        getUserToken(
+          clerkUser?.id || "Unknown",
+          clerkUser?.primaryEmailAddress?.emailAddress || "Unknown"
+        );
+      }
+    }
+  }, [registerUser, clerkUser]);
+
   if (!homeState) {
     return <LoadingIndicator />;
   }
 
-  return <div color="white">Welcome to Discord</div>;
+  return <MyChat {...homeState} />;
 }

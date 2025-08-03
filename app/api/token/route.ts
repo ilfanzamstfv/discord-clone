@@ -2,7 +2,7 @@ import { StreamChat } from "stream-chat";
 
 export async function POST(request: Request) {
   const apiKey = process.env.STREAM_API_KEY;
-  const secret = process.env.STREAM_CHAT_SECRET;
+  const secret = process.env.STREAM_SECRET;
 
   if (!apiKey) {
     return Response.error();
