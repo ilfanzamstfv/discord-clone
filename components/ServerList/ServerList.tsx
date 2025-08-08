@@ -1,21 +1,23 @@
 import { DiscordServer } from "@/models/DiscordServer";
 import { v4 as uuid } from "uuid";
 import Image from "next/image";
+import { useState } from "react";
 
 export default function ServerList() {
+  const [activeServer, setActiveServer] = useState<DiscordServer | undefined>();
   const servers: DiscordServer[] = [
     {
-      id: uuid(),
+      id: '1',
       name: "Cinema Weekend",
       image: "/assets/netflix.jpg",
     },
     {
-      id: uuid(),
+      id: '2',
       name: "Coding Community",
       image: "/assets/computer.jpg",
     },
     {
-      id: uuid(),
+      id: '3',
       name: "Gamer Site",
       image: "/assets/ps4.jpg",
     },
@@ -24,7 +26,12 @@ export default function ServerList() {
     <div className="bg-dark-gray h-full flex flex-col items-center">
       {servers.map((server) => (
         <div key={server.id} className="relative group">
-          <button className="p-2" onClick={() => console.log(server.name)}>
+          <button
+            className={`p-2 sidebar-icon ${
+              server.id === activeServer?.id ? "selected-icon" : ''
+            }`}
+            onClick={() => setActiveServer(server)}
+          >
             {server.image ? (
               <Image
                 className="rounded-icon"
