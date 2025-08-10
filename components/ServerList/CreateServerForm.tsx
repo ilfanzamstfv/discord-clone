@@ -1,8 +1,11 @@
 import Link from "next/link";
 import CloseIcon from "../Icons";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { UserObject } from "@/models/UserObject";
+import { useChatContext } from "stream-chat-react";
+import { User } from "@clerk/nextjs/server";
+import UserRow from "../UserRow";
 
 type FormState = {
   serverName: string;
@@ -16,12 +19,30 @@ export default function CreateServerForm() {
   const dialogRef = useRef<HTMLDialogElement>(null);
 
   // Data
+  const { client } = useChatContext();
   const initialState: FormState = {
     serverName: "",
     serverImage: "",
     users: [],
   };
   const [formData, setFormData] = useState<FormState>(initialState);
+  const [users, setUsers] = useState<UserObject[]>([]);
+
+  const loadUsers = useCallback(async () => {
+    const response = await client.queryUsers({});
+    const users: UserObject[] = response.users
+      .filter((user) => user.role !== 'admin')
+      .map((user) => {
+        return{
+          id: user.id,
+          name: user.name ?? user.id,
+          image: user.image as string,
+          online: user.online,
+          lastOnline: user.last_active,
+        };
+      });
+      if (users) setUsers(users);
+  }, [client]);
 
   useEffect(() => {
     if (showCreateServerForm && dialogRef.current) {
@@ -30,6 +51,10 @@ export default function CreateServerForm() {
       dialogRef.current?.close();
     }
   }, [showCreateServerForm]);
+
+  useEffect(() => {
+    loadUsers();
+  }, [loadUsers]);
 
   return (
     <dialog
@@ -66,7 +91,42 @@ export default function CreateServerForm() {
             required
           />
         </div>
+        <label className="labelTitle" htmlFor="serverImage">
+          Image URL
+        </label>
+        <div className="flex items-center bg-gray-300 rounded-md">
+          <span className="text-2xl p-2 text-gray-700">#</span>
+          <input
+            type="text"
+            id="serverImage"
+            name="serverImage"
+            value={formData.serverImage}
+            onChange={(e) =>
+              setFormData({ ...formData, serverImage: e.target.value })
+            }
+            required
+          />
+        </div>
+        <div className="max-h-64 overflow-y-scroll">
+          {users.map((user) => (
+            <UserRow key={user.id} user={user} userChanged={userChanged} />
+          ))}
+        </div>
       </form>
     </dialog>
   );
+
+  function userChanged(user: UserObject, checked: boolean) {
+    if (checked) {
+      setFormData({
+        ...formData,
+        users: [...formData.users, user],
+      });
+    } else {
+      setFormData({
+        ...formData,
+        users: formData.users.filter((thisUser) => thisUser.id !== user.id),
+      });
+    }
+  }
 }
